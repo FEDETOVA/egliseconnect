@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eglise - Gestion Pastorale</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .navbar-custom {
+      background: linear-gradient(45deg, #2c5a8d, #3a7bd5);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .card-shadow {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      transition: transform 0.2s;
+    }
+    .card-shadow:hover {
+      transform: translateY(-5px);
+    }
+    .card-header {
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+    }
+    .table-pastoral th {
+      background-color: #f8f9fa;
+      font-weight: bold;
+    }
+    .scrollable-list {
+      max-height: 250px;
+      overflow-y: auto;
+      border: 1px solid #e9ecef;
+      border-radius: 5px;
+      padding: 5px;
+    }
+    .message-sent {
+      background-color: #d4edda;
+      text-align: right;
+      border-radius: 8px;
+      margin: 5px 0;
+    }
+    .message-received {
+      background-color: #f8d7da;
+      text-align: left;
+      border-radius: 8px;
+      margin: 5px 0;
+    }
+    .message-unread {
+      font-weight: bold;
+      border-left: 4px solid #dc3545;
+    }
+    .btn-custom {
+      border-radius: 20px;
+      padding: 8px 20px;
+      transition: background-color 0.3s;
+    }
+    .btn-custom:hover {
+      background-color: #0056b3;
+    }
+    body {
+      background: linear-gradient(to bottom, #f0f4f8, #e2e8f0);
+      font-family: 'Arial', sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <!-- Barre de navigation -->
+  <nav class="navbar navbar-expand-lg navbar-custom navbar-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">
+        EGLISE DES ASSEMBLÉES DE DIEU DE NIANGON NORD<br>
+        <small style="font-size:0.8rem">TEMPLE PROVIDENCE DIVINE</small>
+      </a>
+      <div class="d-flex align-items-center">
+        <div class="user-info text-end">
+          <div class="fw-bold">Pasteur Adama Koné</div>
+          <small>Pasteur Principal</small>
+        </div>
+        <button class="btn btn-outline-light btn-sm ms-2" onclick="logout()">Déconnexion</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Contenu Principal -->
+  <div class="container py-5">
+    <div class="row g-4">
+      <!-- Colonne de gauche -->
+      <div class="col-md-6">
+        <!-- Prise de notes lors de la réception d’un membre -->
+        <div class="card card-shadow mb-4">
+          <div class="card-header bg-success text-white">
+            Prise de Notes - Réception Membre
+          </div>
+          <div class="card-body">
+            <form id="notesForm">
+              <div class="mb-3">
+                <label class="form-label">Nom du membre</label>
+                <select class="form-select" id="notesNom" required>
+                  <option value="" disabled selected>Choisir un membre</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-control" id="notesDate" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Notes</label>
+                <textarea class="form-control" id="notesContenu" rows="3" required></textarea>
+              </div>
+              <button type="submit" class="btn btn-success btn-custom">Enregistrer</button>
+            </form>
+            <div class="mt-3 scrollable-list">
+              <ul class="list-group" id="notesList"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bilan financier -->
+        <div class="card card-shadow mb-4">
+          <div class="card-header bg-info text-white">
+            Bilan Financier
+          </div>
+          <div class="card-body">
+            <ul class="list-group">
+              <li class="list-group-item d-flex justify-content-between">
+                <span>Total Entrées</span>
+                <span id="totalEntrees">15 450 000 FCFA</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span>Total Sorties</span>
+                <span id="totalSorties">2 300 000 FCFA</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between fw-bold">
+                <span>Solde Net</span>
+                <span id="soldeNet">13 150 000 FCFA</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- État des pointages 2025 -->
+        <div class="card card-shadow mb-4">
+          <div class="card-header bg-warning text-white">
+            État des Pointages - 2025
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover table-pastoral">
+                <thead>
+                  <tr>
+                    <th>Nom</th>
+                    <th>Registre</th>
+                    <th>Département</th>
+                    <th>Contact</th>
+                  </tr>
+                </thead>
+                <tbody id="pointagesTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonne de droite -->
+      <div class="col-md-6">
+        <!-- Liste des membres -->
+        <div class="card card-shadow mb-4">
+          <div class="card-header bg-primary text-white">
+            Liste des Membres
+          </div>
+          <div class="card-body">
+            <div class="table-responsive scrollable-list">
+              <table class="table table-bordered table-hover table-pastoral">
+                <thead>
+                  <tr>
+                    <th>Nom</th>
+                    <th>Registre</th>
+                    <th>Département</th>
+                    <th>Contact</th>
+                  </tr>
+                </thead>
+                <tbody id="membresTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Boîte de réception -->
+        <div class="card card-shadow mb-4">
+          <div class="card-header bg-dark text-white">
+            Boîte de Réception - Messages des Membres
+          </div>
+          <div class="card-body">
+            <div class="scrollable-list mb-3">
+              <ul class="list-group" id="messagesList"></ul>
+            </div>
+            <form id="messageForm">
+              <div class="input-group">
+                <select class="form-select" id="messageDestinataire" required>
+                  <option value="" disabled selected>Choisir un destinataire</option>
+                </select>
+                <textarea class="form-control" id="messageContenu" rows="2" placeholder="Message" required></textarea>
+                <button type="submit" class="btn btn-primary btn-custom">Envoyer</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Annonces générales -->
+        <div class="card card-shadow mb-4">
+          <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <span>Annonces Générales</span>
+            <button class="btn btn-sm btn-light btn-custom" data-bs-toggle="modal" data-bs-target="#annonceGeneraleModal">+ Nouvelle</button>
+          </div>
+          <div class="card-body scrollable-list">
+            <ul class="list-group" id="annoncesGeneralesList"></ul>
+          </div>
+        </div>
+
+        <!-- État des programmes validés -->
+        <div class="card card-shadow mb-4">
+          <div class="card-header bg-info text-white">
+            Programmes Validés
+          </div>
+          <div class="card-body scrollable-list">
+            <ul class="list-group" id="programmesList"></ul>
+          </div>
+        </div>
+
+        <!-- État des annonces validées -->
+        <div class="card card-shadow mb-4">
+          <div class="card-header bg-primary text-white">
+            Annonces Validées
+          </div>
+          <div class="card-body scrollable-list">
+            <ul class="list-group" id="annoncesList"></ul>
+          </div>
+        </div>
+
+        <!-- État du patrimoine -->
+        <div class="card card-shadow">
+          <div class="card-header bg-secondary text-white">
+            État du Patrimoine
+          </div>
+          <div class="card-body">
+            <ul class="list-group" id="patrimoineList"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nouvelle Annonce Générale -->
+  <div class="modal fade" id="annonceGeneraleModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="card-header bg-success text-white">
+          <h5 class="modal-title">Nouvelle Annonce Générale</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="annonceGeneraleForm">
+            <div class="mb-3">
+              <label class="form-label">Titre</label>
+              <input type="text" class="form-control" id="annonceTitre" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Date</label>
+              <input type="date" class="form-control" id="annonceDate" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Contenu</label>
+              <textarea class="form-control" id="annonceContenu" rows="3" required></textarea>
+            </div>
+            <div class="d-flex justify-content-between">
+              <button type="button" class="btn btn-secondary btn-custom" data-bs-dismiss="modal">Annuler</button>
+              <button type="submit" class="btn btn-success btn-custom">Envoyer à tous</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Données simulées
+    const membres = [
+      { id: 1, nom: "Jean Dupont", registre: "JD001", departement: "Chorale", contact: "07 01 23 45 67", annees: ["2024", "2025"] },
+      { id: 2, nom: "Marie Koné", registre: "MK002", departement: "Jeunesse", contact: "05 98 76 54 32", annees: ["2023", "2024"] },
+      { id: 3, nom: "Paul Akpa", registre: "PA003", departement: "Hommes", contact: "01 23 45 67 89", annees: ["2025"] }
+    ];
+    const notes = [
+      { id: 1, nom: "Jean Dupont", date: "2025-03-20", contenu: "Visite pastorale, discussion sur la foi" },
+      { id: 2, nom: "Marie Koné", date: "2025-03-22", contenu: "Conseil pastoral, préparation au baptême" }
+    ];
+    const messages = [
+      { id: 1, type: "reçu", expediteur: "Jean Dupont", contenu: "Pasteur, besoin de conseil pour ma famille", date: "2025-03-28", lu: false },
+      { id: 2, type: "envoyé", destinataire: "Marie Koné", contenu: "Rendez-vous confirmé pour le baptême", date: "2025-03-29", lu: true },
+      { id: 3, type: "reçu", expediteur: "Paul Akpa", contenu: "Demande de prière urgente", date: "2025-03-30", lu: true }
+    ];
+    const annoncesGenerales = [
+      { id: 1, titre: "Culte de Pâques", date: "2025-04-20", contenu: "Célébration spéciale à 10h" },
+      { id: 2, titre: "Réunion générale", date: "2025-04-25", contenu: "Tous les membres sont attendus à 15h" }
+    ];
+    const programmes = [
+      { titre: "Programme Mars 2025", mois: "2025-03", activites: 12 },
+      { titre: "Programme Février 2025", mois: "2025-02", activites: 10 }
+    ];
+    const annonces = [
+      { titre: "Culte spécial Pâques", date: "2025-04-20", details: "10h-13h" },
+      { titre: "Conférence jeunesse", date: "2025-05-15", details: "14h-17h" }
+    ];
+    const patrimoine = [
+      { nom: "Temple Principal", valeur: "50 000 000 FCFA", etat: "Bon" },
+      { nom: "Bus Église", valeur: "15 000 000 FCFA", etat: "En réparation" }
+    ];
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', () => {
+      renderNotes();
+      renderMembres();
+      renderPointages();
+      renderMessages();
+      renderAnnoncesGenerales();
+      renderProgrammes();
+      renderAnnonces();
+      renderPatrimoine();
+      updateMembreSelects();
+    });
+
+    // Rendu des notes
+    function renderNotes() {
+      const list = document.getElementById('notesList');
+      list.innerHTML = notes.map(n => {
+        const membre = membres.find(m => m.nom === n.nom);
+        return `
+          <li class="list-group-item">
+            <strong>${n.nom}</strong> - ${n.date} (Contact: ${membre ? membre.contact : '-'})<br>
+            ${n.contenu}
+          </li>
+        `;
+      }).join('');
+    }
+
+    // Rendu des membres
+    function renderMembres() {
+      const tbody = document.getElementById('membresTable');
+      tbody.innerHTML = membres.map(m => `
+        <tr>
+          <td>${m.nom}</td>
+          <td>${m.registre || '-'}</td>
+          <td>${m.departement || '-'}</td>
+          <td>${m.contact || '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Rendu des pointages 2025
+    function renderPointages() {
+      const tbody = document.getElementById('pointagesTable');
+      tbody.innerHTML = membres
+        .filter(m => m.annees.includes("2025"))
+        .map(m => `
+          <tr>
+            <td>${m.nom}</td>
+            <td>${m.registre || '-'}</td>
+            <td>${m.departement || '-'}</td>
+            <td>${m.contact || '-'}</td>
+          </tr>
+        `).join('');
+    }
+
+    // Rendu des messages
+    function renderMessages() {
+      const list = document.getElementById('messagesList');
+      list.innerHTML = messages.map(m => {
+        const membre = membres.find(mb => mb.nom === (m.type === 'envoyé' ? m.destinataire : m.expediteur));
+        return `
+          <li class="list-group-item ${m.type === 'envoyé' ? 'message-sent' : 'message-received'} ${!m.lu && m.type === 'reçu' ? 'message-unread' : ''}">
+            <strong>${m.type === 'envoyé' ? 'À: ' + m.destinataire : 'De: ' + m.expediteur}</strong> - ${m.date}<br>
+            Contact: ${membre ? membre.contact : '-'}<br>
+            ${m.contenu}
+            ${m.type === 'reçu' ? `<button class="btn btn-sm btn-primary mt-1" onclick="repondreMessage('${m.expediteur}', ${m.id})">Répondre</button>` : ''}
+            ${!m.lu && m.type === 'reçu' ? `<button class="btn btn-sm btn-secondary mt-1 ms-1" onclick="marquerCommeLu(${m.id})">Marquer comme lu</button>` : ''}
+          </li>
+        `;
+      }).join('');
+    }
+
+    // Rendu des annonces générales
+    function renderAnnoncesGenerales() {
+      const list = document.getElementById('annoncesGeneralesList');
+      list.innerHTML = annoncesGenerales.map(a => `
+        <li class="list-group-item">
+          <strong>${a.titre}</strong> - ${new Date(a.date).toLocaleDateString()}<br>
+          ${a.contenu}
+        </li>
+      `).join('');
+    }
+
+    // Rendu des programmes validés
+    function renderProgrammes() {
+      const list = document.getElementById('programmesList');
+      list.innerHTML = programmes.map(p => `
+        <li class="list-group-item">
+          <strong>${p.titre}</strong> - ${new Date(p.mois + "-01").toLocaleString('fr', { month: 'long', year: 'numeric' })}<br>
+          ${p.activites} activités
+        </li>
+      `).join('');
+    }
+
+    // Rendu des annonces validées
+    function renderAnnonces() {
+      const list = document.getElementById('annoncesList');
+      list.innerHTML = annonces.map(a => `
+        <li class="list-group-item">
+          <strong>${a.titre}</strong> - ${new Date(a.date).toLocaleDateString()}<br>
+          ${a.details}
+        </li>
+      `).join('');
+    }
+
+    // Rendu du patrimoine
+    function renderPatrimoine() {
+      const list = document.getElementById('patrimoineList');
+      list.innerHTML = patrimoine.map(p => `
+        <li class="list-group-item">
+          <strong>${p.nom}</strong> - ${p.valeur}<br>
+          État: ${p.etat}
+        </li>
+      `).join('');
+    }
+
+    // Mise à jour des listes déroulantes pour les membres
+    function updateMembreSelects() {
+      const notesNom = document.getElementById('notesNom');
+      const messageDestinataire = document.getElementById('messageDestinataire');
+      const options = membres.map(m => `<option value="${m.nom}">${m.nom}</option>`).join('');
+      notesNom.innerHTML = `<option value="" disabled selected>Choisir un membre</option>${options}`;
+      messageDestinataire.innerHTML = `<option value="" disabled selected>Choisir un destinataire</option>${options}`;
+    }
+
+    // Gestion des notes
+    document.getElementById('notesForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nom = document.getElementById('notesNom').value;
+      const date = document.getElementById('notesDate').value;
+      const contenu = document.getElementById('notesContenu').value.trim();
+
+      notes.push({ id: Date.now(), nom, date, contenu });
+      renderNotes();
+      e.target.reset();
+    });
+
+    // Gestion des messages
+    document.getElementById('messageForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const destinataire = document.getElementById('messageDestinataire').value;
+      const contenu = document.getElementById('messageContenu').value.trim();
+      const date = new Date().toISOString().split('T')[0];
+
+      messages.push({ id: Date.now(), type: "envoyé", destinataire, contenu, date, lu: true });
+      renderMessages();
+      e.target.reset();
+    });
+
+    // Répondre à un message
+    function repondreMessage(expediteur, messageId) {
+      const reponse = prompt(`Répondre à ${expediteur}:`, "");
+      if (reponse) {
+        const date = new Date().toISOString().split('T')[0];
+        messages.push({ id: Date.now(), type: "envoyé", destinataire: expediteur, contenu: reponse, date, lu: true });
+        const message = messages.find(m => m.id === messageId);
+        if (message && !message.lu) {
+          message.lu = true;
+        }
+        renderMessages();
+      }
+    }
+
+    // Marquer un message comme lu
+    function marquerCommeLu(messageId) {
+      const message = messages.find(m => m.id === messageId);
+      if (message) {
+        message.lu = true;
+        renderMessages();
+      }
+    }
+
+    // Gestion des annonces générales
+    document.getElementById('annonceGeneraleForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const titre = document.getElementById('annonceTitre').value.trim();
+      const date = document.getElementById('annonceDate').value;
+      const contenu = document.getElementById('annonceContenu').value.trim();
+
+      annoncesGenerales.push({ id: Date.now(), titre, date, contenu });
+      renderAnnoncesGenerales();
+      bootstrap.Modal.getInstance(document.getElementById('annonceGeneraleModal')).hide();
+      e.target.reset();
+    });
+
+    // Déconnexion
+    function logout() {
+      if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
+        window.location.href = "index.html";
+      }
+    }
+  </script>
+</body>
+</html>

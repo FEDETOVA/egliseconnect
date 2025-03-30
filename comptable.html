@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eglise - Comptable</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .navbar-custom {
+            background: linear-gradient(45deg, #2c5a8d, #3a7bd5);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .financial-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        .badge-status {
+            min-width: 90px;
+        }
+        .transfer-icon {
+            width: 30px;
+            margin: 0 10px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Barre de navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                EGLISE DES ASSEMBLÉES DE DIEU DE NIANGON NORD<br>
+                <small style="font-size:0.8rem">TEMPLE PROVIDENCE DIVINE</small>
+            </a>
+            <div class="d-flex align-items-center">
+                <div class="user-info text-end me-3">
+                    <div class="fw-bold">Marie Konan</div>
+                    <small>Comptable</small>
+                </div>
+                <button class="btn btn-outline-light btn-sm" onclick="logout()">Déconnexion</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenu principal -->
+    <div class="container py-5">
+        <!-- En-tête -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h4 text-primary">Gestion Financière</h2>
+            <div class="badge bg-info">Solde Global: <span id="globalBalance">15 450 000</span> FCFA</div>
+        </div>
+
+        <!-- Bilan des comptes -->
+        <div class="financial-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5>Bilan des Comptes</h5>
+                <div>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#accountModal">
+                        + Compte
+                    </button>
+                    <button class="btn btn-warning btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#transferModal">
+                        ↔ Transfert
+                    </button>
+                    <button class="btn btn-success btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#movementModal">
+                        + Mouvement
+                    </button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <h6 class="mb-3">Liste des Comptes</h6>
+                    <div class="list-group" id="accountsList"></div>
+                </div>
+                <div class="col-md-8">
+                    <h6 class="mb-3">Mouvements Récents</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Montant</th>
+                                    <th>Compte Source</th>
+                                    <th>Compte de Charges</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody id="movementsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historique des mouvements -->
+        <div class="financial-card">
+            <h5 class="mb-3">Historique des Mouvements</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Montant</th>
+                            <th>Compte Source</th>
+                            <th>Compte de Charges</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Aperçu des engagements des membres -->
+        <div class="financial-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5>Aperçu des Engagements des Membres</h5>
+                <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#ajouterEngagementModal">
+                    + Nouvel Engagement
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Membre</th>
+                            <th>Projet</th>
+                            <th>Engagement</th>
+                            <th>Versé</th>
+                            <th>Reste</th>
+                            <th>Date Échéance</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody id="engagementsTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ajout Engagement -->
+    <div class="modal fade" id="ajouterEngagementModal" tabindex="-1" aria-labelledby="ajouterEngagementLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="formAjouterEngagement">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="ajouterEngagementLabel">Ajouter un Engagement</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="nomMembre" class="form-label">Nom du Membre</label>
+                            <input type="text" class="form-control" id="nomMembre" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="projetCible" class="form-label">Projet</label>
+                            <select class="form-select" id="projetCible" required></select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="montantEngage" class="form-label">Montant Engagé (FCFA)</label>
+                            <input type="number" class="form-control" id="montantEngage" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="montantVerse" class="form-label">Montant Versé (FCFA)</label>
+                            <input type="number" class="form-control" id="montantVerse" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="dateEcheance" class="form-label">Date d’Échéance</label>
+                            <input type="date" class="form-control" id="dateEcheance" required />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Ajouter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Création Compte -->
+    <div class="modal fade" id="accountModal" tabindex="-1" aria-labelledby="accountModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="accountForm">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="accountModalLabel">Nouveau Compte</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nom du Compte</label>
+                            <input type="text" class="form-control" id="accountName" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" id="accountType" required>
+                                <option value="Entrée">Entrée</option>
+                                <option value="Sortie">Sortie</option>
+                                <option value="Spécial">Spécial</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Créer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nouveau Mouvement -->
+    <div class="modal fade" id="movementModal" tabindex="-1" aria-labelledby="movementModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="movementForm">
+                    <div class="modal-header bg-info text-white">
+                        <h5 class="modal-title" id="movementModalLabel">Nouveau Mouvement</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Date</label>
+                            <input type="date" class="form-control" id="movementDate" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" id="movementType" required onchange="toggleAccountFields()">
+                                <option value="Entrée">Entrée</option>
+                                <option value="Sortie">Sortie</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Montant (FCFA)</label>
+                            <input type="number" class="form-control" id="movementAmount" required />
+                        </div>
+                        <div class="mb-3" id="sourceAccountField">
+                            <label class="form-label">Compte Source</label>
+                            <select class="form-select" id="movementSourceAccount"></select>
+                        </div>
+                        <div class="mb-3" id="chargeAccountField">
+                            <label class="form-label">Compte de Charges</label>
+                            <select class="form-select" id="movementChargeAccount"></select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="movementDescription" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Sauvegarder</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Transfert -->
+    <div class="modal fade" id="transferModal" tabindex="-1" aria-labelledby="transferModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="transferForm">
+                    <div class="modal-header bg-warning text-white">
+                        <h5 class="modal-title" id="transferModalLabel">Transfert entre Comptes</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row align-items-center mb-4">
+                            <div class="col-5">
+                                <label class="form-label">Compte Source</label>
+                                <select class="form-select" id="sourceAccount" required onchange="updateDestinationOptions()"></select>
+                            </div>
+                            <div class="col-2 text-center">
+                                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNNSAxMmgxNE0xMiA1bDcgNy03IDciLz48L3N2Zz4=" 
+                                     class="transfer-icon">
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label">Compte Destination</label>
+                                <select class="form-select" id="destinationAccount" required></select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Montant (FCFA)</label>
+                            <input type="number" class="form-control" id="transferAmount" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="transferDescription" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-warning">Exécuter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Données initiales
+        const data = {
+            projets: [
+                {
+                    id: 1,
+                    nom: "Nouveau Sanctuaire",
+                    engagements: [
+                        { id: 1, membre: "Jean Dupont", engagement: 100000, verse: 60000, dateEcheance: "2024-04-15", statut: "En retard" },
+                        { id: 2, membre: "Marie Koné", engagement: 50000, verse: 50000, dateEcheance: "2024-03-30", statut: "Payé" }
+                    ]
+                },
+                {
+                    id: 2,
+                    nom: "Bus de l’église",
+                    engagements: [
+                        { id: 3, membre: "Paul Akpa", engagement: 75000, verse: 25000, dateEcheance: "2024-04-10", statut: "En cours" }
+                    ]
+                }
+            ],
+            comptes: [
+                { id: 1, nom: "Dîmes & Offrandes", type: "Entrée", solde: 2450000 },
+                { id: 2, nom: "Projet Sanctuaire", type: "Spécial", solde: 8000000 },
+                { id: 3, nom: "Dépenses Générales", type: "Sortie", solde: 0 }
+            ],
+            mouvements: [
+                { id: 1, date: "2024-03-01", type: "Entrée", montant: 750000, sourceId: null, chargeId: 1, description: "Collecte dimanche" },
+                { id: 2, date: "2024-02-28", type: "Sortie", montant: 350000, sourceId: 2, chargeId: 3, description: "Achat matériel" }
+            ]
+        };
+
+        // Rendu des engagements
+        function renderEngagements() {
+            const tbody = document.getElementById('engagementsTable');
+            let html = '';
+            data.projets.forEach(projet => {
+                projet.engagements.forEach(engagement => {
+                    html += `
+                        <tr>
+                            <td>${engagement.membre}</td>
+                            <td>${projet.nom}</td>
+                            <td>${engagement.engagement.toLocaleString()} FCFA</td>
+                            <td>${engagement.verse.toLocaleString()} FCFA</td>
+                            <td>${(engagement.engagement - engagement.verse).toLocaleString()} FCFA</td>
+                            <td>${new Date(engagement.dateEcheance).toLocaleDateString()}</td>
+                            <td><span class="badge ${getStatusBadge(engagement.statut)} badge-status">${engagement.statut}</span></td>
+                        </tr>
+                    `;
+                });
+            });
+            tbody.innerHTML = html;
+        }
+
+        function getStatusBadge(statut) {
+            return {
+                'Payé': 'bg-success',
+                'En cours': 'bg-primary',
+                'En retard': 'bg-danger'
+            }[statut] || 'bg-secondary';
+        }
+
+        // Rendu des comptes
+        function renderAccounts() {
+            const accountsList = document.getElementById('accountsList');
+            accountsList.innerHTML = data.comptes.map(account => `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    ${account.nom}
+                    <span class="badge ${account.type === 'Entrée' ? 'bg-success' : account.type === 'Sortie' ? 'bg-danger' : 'bg-warning'}">
+                        ${account.solde.toLocaleString()} FCFA
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        // Rendu des mouvements (récents et historique)
+        function renderMovements(containerId, limit = 5) {
+            const tbody = document.getElementById(containerId);
+            const movements = containerId === 'movementsTable' 
+                ? data.mouvements.slice(-limit) 
+                : data.mouvements;
+            tbody.innerHTML = movements.map(movement => `
+                <tr>
+                    <td>${new Date(movement.date).toLocaleDateString()}</td>
+                    <td><span class="badge ${movement.type === 'Entrée' ? 'bg-success' : 'bg-danger'}">${movement.type}</span></td>
+                    <td>${movement.montant.toLocaleString()} FCFA</td>
+                    <td>${movement.sourceId ? data.comptes.find(c => c.id === movement.sourceId)?.nom || '-' : '-'}</td>
+                    <td>${movement.chargeId ? data.comptes.find(c => c.id === movement.chargeId)?.nom || '-' : '-'}</td>
+                    <td>${movement.description || '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Mise à jour du solde global
+        function updateGlobalBalance() {
+            const totalSolde = data.comptes
+                .filter(c => c.type !== 'Sortie') // Exclut les comptes de charges du solde global
+                .reduce((sum, compte) => sum + compte.solde, 0);
+            document.getElementById('globalBalance').textContent = totalSolde.toLocaleString();
+        }
+
+        // Remplir les projets dans le select du modal engagement
+        function fillProjectsSelect() {
+            const select = document.getElementById('projetCible');
+            select.innerHTML = data.projets.map((projet, index) => `
+                <option value="${index}">${projet.nom}</option>
+            `).join('');
+        }
+
+        // Remplir les comptes dans les selects
+        function fillAccountsSelect() {
+            const sourceSelect = document.getElementById('movementSourceAccount');
+            const chargeSelect = document.getElementById('movementChargeAccount');
+            const sourceTransfer = document.getElementById('sourceAccount');
+            const destTransfer = document.getElementById('destinationAccount');
+
+            const sourceOptions = data.comptes
+                .filter(c => c.type !== 'Sortie') // Sources possibles : Entrée ou Spécial
+                .map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+            const chargeOptions = data.comptes
+                .filter(c => c.type === 'Sortie') // Charges : uniquement Sortie
+                .map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+            const allOptions = data.comptes.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+
+            sourceSelect.innerHTML = sourceOptions;
+            chargeSelect.innerHTML = chargeOptions;
+            sourceTransfer.innerHTML = allOptions;
+            destTransfer.innerHTML = allOptions;
+        }
+
+        // Basculer les champs du modal mouvement
+        function toggleAccountFields() {
+            const type = document.getElementById('movementType').value;
+            const sourceField = document.getElementById('sourceAccountField');
+            const chargeField = document.getElementById('chargeAccountField');
+            sourceField.style.display = type === 'Sortie' ? 'block' : 'none';
+            sourceField.querySelector('select').required = type === 'Sortie';
+            chargeField.style.display = type === 'Sortie' ? 'block' : 'none';
+            chargeField.querySelector('select').required = type === 'Sortie';
+        }
+
+        // Calculer le statut d’un engagement
+        function calculerStatut(verse, total, dateEcheance) {
+            const today = new Date();
+            const dateFin = new Date(dateEcheance);
+            if (verse >= total) return "Payé";
+            if (today > dateFin) return "En retard";
+            return "En cours";
+        }
+
+        // Gestion des formulaires
+        document.getElementById('formAjouterEngagement').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const membre = document.getElementById('nomMembre').value;
+            const projetIndex = parseInt(document.getElementById('projetCible').value);
+            const montantEngage = parseInt(document.getElementById('montantEngage').value);
+            const montantVerse = parseInt(document.getElementById('montantVerse').value);
+            const dateEcheance = document.getElementById('dateEcheance').value;
+            const statut = calculerStatut(montantVerse, montantEngage, dateEcheance);
+
+            const nouvelEngagement = {
+                id: Date.now(),
+                membre,
+                engagement: montantEngage,
+                verse: montantVerse,
+                dateEcheance,
+                statut
+            };
+
+            data.projets[projetIndex].engagements.push(nouvelEngagement);
+            this.reset();
+            bootstrap.Modal.getInstance(document.getElementById('ajouterEngagementModal')).hide();
+            renderEngagements();
+        });
+
+        document.getElementById('accountForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newAccount = {
+                id: Date.now(),
+                nom: document.getElementById('accountName').value,
+                type: document.getElementById('accountType').value,
+                solde: 0
+            };
+            data.comptes.push(newAccount);
+            this.reset();
+            bootstrap.Modal.getInstance(document.getElementById('accountModal')).hide();
+            renderAccounts();
+            fillAccountsSelect();
+        });
+
+        document.getElementById('movementForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const type = document.getElementById('movementType').value;
+            const movement = {
+                id: Date.now(),
+                date: document.getElementById('movementDate').value,
+                type,
+                montant: parseInt(document.getElementById('movementAmount').value),
+                sourceId: type === 'Sortie' ? parseInt(document.getElementById('movementSourceAccount').value) : null,
+                chargeId: type === 'Entrée' 
+                    ? parseInt(document.getElementById('movementChargeAccount').value) || null 
+                    : parseInt(document.getElementById('movementChargeAccount').value),
+                description: document.getElementById('movementDescription').value
+            };
+
+            data.mouvements.push(movement);
+            data.comptes = data.comptes.map(c => {
+                if (type === 'Entrée' && c.id === movement.chargeId) {
+                    c.solde += movement.montant; // Entrée augmente le solde du compte cible
+                } else if (type === 'Sortie' && c.id === movement.sourceId) {
+                    c.solde -= movement.montant; // Sortie diminue le solde du compte source
+                }
+                return c;
+            });
+
+            this.reset();
+            bootstrap.Modal.getInstance(document.getElementById('movementModal')).hide();
+            renderAccounts();
+            renderMovements('movementsTable');
+            renderMovements('historyTable', Infinity);
+            updateGlobalBalance();
+        });
+
+        document.getElementById('transferForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const sourceId = parseInt(document.getElementById('sourceAccount').value);
+            const destId = parseInt(document.getElementById('destinationAccount').value);
+            const montant = parseInt(document.getElementById('transferAmount').value);
+            const description = document.getElementById('transferDescription').value;
+            const date = new Date().toISOString().split('T')[0];
+
+            data.mouvements.push({
+                id: Date.now(),
+                date,
+                type: 'Sortie',
+                montant,
+                sourceId,
+                chargeId: destId,
+                description: `Transfert vers ${data.comptes.find(c => c.id === destId).nom}: ${description}`
+            });
+
+            data.comptes = data.comptes.map(c => {
+                if (c.id === sourceId) c.solde -= montant;
+                if (c.id === destId && c.type !== 'Sortie') c.solde += montant; // Ne pas augmenter un compte de charges
+                return c;
+            });
+
+            this.reset();
+            bootstrap.Modal.getInstance(document.getElementById('transferModal')).hide();
+            renderAccounts();
+            renderMovements('movementsTable');
+            renderMovements('historyTable', Infinity);
+            updateGlobalBalance();
+        });
+
+        // Mise à jour des options de destination pour le transfert
+        function updateDestinationOptions() {
+            const sourceId = document.getElementById('sourceAccount').value;
+            const destSelect = document.getElementById('destinationAccount');
+            destSelect.innerHTML = data.comptes
+                .filter(c => c.id != sourceId)
+                .map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+        }
+
+        // Déconnexion
+        function logout() {
+            if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
+                window.location.href = "index.html";
+            }
+        }
+
+        // Initialisation
+        function init() {
+            renderEngagements();
+            renderAccounts();
+            renderMovements('movementsTable');
+            renderMovements('historyTable', Infinity);
+            updateGlobalBalance();
+            fillProjectsSelect();
+            fillAccountsSelect();
+            toggleAccountFields();
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
